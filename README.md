@@ -1,6 +1,8 @@
 # Backend
 
-The backend of the URLify service, built with ASP.NET Core. It utilizes Entity Framework Core for database management and Identity for secure user authentication.
+The backend of the URLify service, built with ASP.NET Core. It utilizes Entity Framework Core as ORM and Identity for secure user authentication.
+
+This backend was developed as part of a challenge detailed on the [URL Shortening Service Roadmap](https://roadmap.sh/projects/url-shortening-service).
 
 For full functionality, integrate this backend with the [Frontend Repository](https://github.com/Costa0910/url-shortening-frontend).
 
