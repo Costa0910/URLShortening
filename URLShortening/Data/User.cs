@@ -1,7 +1,7 @@
 using System.Security.Policy;
 using Microsoft.AspNetCore.Identity;
 
-namespace URLShortening.Models;
+namespace URLShortening.Data;
 
 public class User : IdentityUser
 {

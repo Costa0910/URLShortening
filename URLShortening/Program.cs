@@ -1,10 +1,16 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using URLShortening.Data;
+using URLShortening.Data.Repository;
+using URLShortening.Helpers;
+using URLShortening.Models;
+using URLShortening.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,10 +29,21 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 
+builder.Services.AddIdentity<User, IdentityRole>(
+        config =>
+        {
+            config.Tokens.AuthenticatorTokenProvider
+                = TokenOptions.DefaultAuthenticatorProvider;
+            config.SignIn.RequireConfirmedEmail = true;
+        })
+    .AddDefaultTokenProviders()
+    .AddEntityFrameworkStores<DataContext>();
+
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(op =>
     {
-        op.TokenValidationParameters = new()
+        op.TokenValidationParameters = new TokenValidationParameters()
         {
             ValidateIssuer = true,
             ValidateAudience = true,
@@ -39,11 +56,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
 var connectionString
     = builder.Configuration.GetConnectionString("DefaultConnection") ??
       throw new ArgumentException("Connection string not found");
 
-builder.Services.AddDbContext<DbContext>(options =>
+builder.Services.AddDbContext<DataContext>(options =>
     options.UseSqlServer(connectionString));
 
 // Add services to the container.
@@ -93,6 +112,14 @@ builder.Services.AddVersionedApiExplorer(options =>
     options.SubstituteApiVersionInUrl = true;
 });
 
+builder.Services.AddScoped<IUserHelper, UserHelper>();
+builder.Services.AddScoped<IMailService, MailService>();
+builder.Services.AddScoped<ICodeGeneratorHelper, CodeGeneratorHelper>();
+builder.Services.AddScoped<IUrlRepository, UrlRepository>();
+builder.Services.AddScoped<IAccessLogRepository, AccessLogRepository>();
+builder.Services.AddSingleton<IDeviceInfoHelper, DeviceInfoHelper>();
+builder.Services.AddScoped<IGeoHelper, GeoHelper>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -104,6 +131,11 @@ if (app.Environment.IsDevelopment())
     // {
     //     options.SwaggerEndpoint("/swagger/v1/swagger.json", "API v1");
     // });
+    // using (var scope = app.Services.CreateScope())
+    // {
+    //     var context = scope.ServiceProvider.GetRequiredService<DbContext>();
+    //     await context.Database.MigrateAsync();
+    // }
 }
 else
 {
