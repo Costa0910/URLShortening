@@ -123,7 +123,7 @@ public class ShortenController(
         return Ok(urlsDto);
     }
 
-    [HttpPut("{shortUrl}")]
+    [HttpPut("{url}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

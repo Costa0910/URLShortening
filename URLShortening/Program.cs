@@ -1,33 +1,17 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Serilog;
 using URLShortening.Data;
 using URLShortening.Data.Repository;
 using URLShortening.Helpers;
-using URLShortening.Models;
 using URLShortening.Services;
 
 var builder = WebApplication.CreateBuilder(args);
-
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Error()
-    .WriteTo.File(
-        path: "Logs/app-log-.txt",
-        rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: 7,
-        outputTemplate:
-        "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
-        retainedFileTimeLimit: TimeSpan.FromDays(7),
-        shared: true,
-        fileSizeLimitBytes: 10485760 // 10 MB
-    ).CreateLogger();
-
-builder.Host.UseSerilog();
 
 builder.Services.AddIdentity<User, IdentityRole>(
         config =>
@@ -127,15 +111,6 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    // app.UseSwaggerUI(options =>
-    // {
-    //     options.SwaggerEndpoint("/swagger/v1/swagger.json", "API v1");
-    // });
-    // using (var scope = app.Services.CreateScope())
-    // {
-    //     var context = scope.ServiceProvider.GetRequiredService<DbContext>();
-    //     await context.Database.MigrateAsync();
-    // }
 }
 else
 {
@@ -152,5 +127,32 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapGet("/", () => Results.Json(new
+{
+    Message = "App is running",
+    Documentation = "http://localhost:port here/swagger/index.html",
+    Timestamp = DateTime.UtcNow
+}));
+
+app.Map("/error", (HttpContext httpContext) =>
+{
+    var exception = httpContext.Features.Get<IExceptionHandlerFeature>()?.Error;
+    var statusCode = exception is FileNotFoundException
+        ? StatusCodes.Status404NotFound
+        : StatusCodes.Status500InternalServerError;
+
+    return Results.Problem(
+        detail: exception?.Message,
+        statusCode: statusCode,
+        title: "An error occurred"
+    );
+});
+
+app.MapFallback(() => Results.NotFound(new
+{
+    Message = "The requested resource was not found.",
+    Timestamp = DateTime.UtcNow
+}));
 
 await app.RunAsync();

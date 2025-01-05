@@ -37,4 +37,6 @@ For full functionality, integrate this backend with the [Frontend Repository](ht
     ```
 
 7. **Access the API:**
-    After starting the application, use the Swagger interface, which opens automatically in your browser, to explore and test the API endpoints.
+    After starting the application, use the Swagger interface, which opens 
+   automatically (if not open manually) in your browser, to explore and test 
+   the API endpoints.
